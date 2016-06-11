@@ -4,12 +4,23 @@ const url = require('url');
 
 let routes = {
   'GET': {
-
+    '/': (req, res) => {
+      res.writeHead(200, {'Content-type': 'text/html'});
+      res.end('<h1>Hello router</h1>');
+    },
+    '/about': (req, res) => {
+      res.writeHead(200, {'Content-type': 'text/html'});
+      res.end('<h1>This is the about page</h1>');
+    },
+    '/api/getinfo': (req, res) => {
+      res.writeHead(200, {'Content-type': 'text/html'});
+      res.end(JSON.stringify(req.queryParams));
+    }
   },
   'POST': {
 
   },
-  'NA': (req, res) {
+  'NA': (req, res) => {
     res.writeHead('404');
     res.end('Content not found!');
   }
@@ -17,9 +28,14 @@ let routes = {
 
 function router(req, res) {
   let baseURI = url.parse(req.url, true);
-  console.log('Requested route: ', baseURI);
-  res.writeHead(200, {'Content-type': 'text/html'});
-  res.end('<h1>Hello router</h1>');
+  let resolveRoute = routes[req.method][baseURI.pathname];
+  if (resolveRoute) {
+    req.queryParams = baseURI.query;
+    resolveRoute(req, res);
+  }
+  else {
+    routes['NA'](req, res);
+  }
 }
 
 http.createServer(router).listen(3000, () => {
