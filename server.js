@@ -11,7 +11,7 @@ let mimeTypes = {
     '.gif': 'image/gif',
     '.png': 'image/png',
     '.jpeg': 'image/jpeg'
-}
+};
 
 function fileAccess(filePath) {
     return new Promise((resolve, reject) => {
@@ -26,16 +26,11 @@ function fileAccess(filePath) {
     });
 }
 
-function fileReader(filePath) {
+function streamFile(filePath) {
     return new Promise((resolve, reject) => {
-        fs.readFile(filePath, (error, content) => {
-            if(!error) {
-                resolve(content);
-            }
-            else {
-                reject(error);
-            }
-        });
+        let fileStream = fs.createReadStream(filePath);
+        fileStream.on('open', () =>  resolve(fileStream));
+        fileStream.on('error', error => reject(error));
     });
 }
 
@@ -45,10 +40,10 @@ function webServer(req, res) {
     let contentType = mimeTypes[path.extname(filePath)];
 
     fileAccess(filePath)
-        .then(fileReader)
-        .then(content => {
+        .then(streamFile)
+        .then(fileStream => {
             res.writeHead(200, {'Content-type': contentType});
-            res.end(content, 'utf-8');
+            fileStream.pipe(res);
         })
         .catch(error => {
             res.writeHead(404);
